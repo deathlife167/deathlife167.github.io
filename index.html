@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cyber-Grid: The Ultimate Reality</title>
+    <script src="https://cdn.jsdelivr.net/npm/phaser@3.60.0/dist/phaser.min.js"></script>
+    <style>
+        * { box-sizing: border-box; user-select: none; }
+        body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background-color: #05070f; font-family: 'Courier New', Courier, monospace; color: #00ffcc; }
+        #setup-screen { position: absolute; width: 100%; height: 100%; background: radial-gradient(circle, #101525 0%, #05070f 100%); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 10; padding: 20px; text-align: center; border: 4px solid #1f2d5a; }
+        .glitch-title { font-size: 2.5rem; font-weight: bold; text-transform: uppercase; letter-spacing: 4px; color: #ff0055; text-shadow: 2px 2px #00ffcc, -2px -2px #ff0055; margin-bottom: 30px; animation: glitch 1s infinite; }
+        @keyframes glitch { 0% { text-shadow: 2px 2px #00ffcc, -2px -2px #ff0055; } 50% { text-shadow: -2px 2px #ff0055, 2px -2px #00ffcc; } 100% { text-shadow: 2px 2px #00ffcc, -2px -2px #ff0055; } }
+        .panel { background: rgba(16, 21, 37, 0.8); border: 2px solid #00ffcc; border-radius: 8px; padding: 25px; max-width: 450px; width: 100%; box-shadow: 0 0 20px rgba(0, 255, 204, 0.2); }
+        .step { display: none; }
+        .step.active { display: block; }
+        .btn-grid { display: grid; grid-template-columns: 140px 140px; gap: 15px; justify-content: center; margin-top: 20px; }
+        button { background: #070a14; border: 2px solid #ff0055; color: #ff0055; padding: 12px 20px; font-size: 1rem; font-family: inherit; font-weight: bold; cursor: pointer; border-radius: 4px; transition: all 0.3s ease; box-shadow: 0 0 10px rgba(255,0,85,0.2); }
+        button:hover { background: #ff0055; color: #fff; box-shadow: 0 0 15px #ff0055; }
+        button.selected { background: #00ffcc; color: #05070f; border-color: #00ffcc; box-shadow: 0 0 15px #00ffcc; }
+        input[type="text"] { background: #05070f; border: 2px solid #00ffcc; padding: 12px; color: #00ffcc; font-size: 1.1rem; font-family: inherit; text-align: center; width: 100%; margin-top: 15px; border-radius: 4px; outline: none; }
+        .instructions { font-size: 0.95rem; line-height: 1.5; color: #94a3b8; margin-top: 15px; text-align: left; background: #070a14; padding: 15px; border-left: 3px solid #00ffcc; max-height: 200px; overflow-y: auto; }
+        #game-container { width: 100%; height: 100%; display: block; }
+        #ad-modal { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(5,7,15,0.95); display: none; flex-direction: column; align-items: center; justify-content: center; z-index: 20; color: #ff0055; }
+        .ad-box { background: #101525; border: 3px solid #ff0055; padding: 30px; border-radius: 8px; text-align: center; max-width: 400px; }
+        #ending-screen { position: absolute; top:0; left:0; width:100%; height:100%; display:none; flex-direction:column; align-items:center; justify-content:center; z-index:30; padding:20px; text-align:center; }
+        .ending-title { font-size: 3rem; font-weight: bold; margin-bottom: 20px; }
+        .ending-story { font-size: 1.2rem; max-width: 600px; line-height: 1.6; margin-bottom: 30px; color: #e2e8f0; }
+    </style>
+</head>
+<body>
+
+    <div id="setup-screen">
+        <div class="glitch-title">CYBER-GRID</div>
+        <div class="panel">
+            <div id="step-lang" class="step active">
+                <p style="margin-top:0;">SELECT TRANSMISSION LANGUAGE</p>
+                <div class="btn-grid">
+                    <button onclick="selectLang('en')">ENGLISH</button>
+                    <button onclick="selectLang('bn')">বাংলা</button>
+                </div>
+            </div>
+
+            <div id="step-device" class="step">
+                <p id="device-prompt" style="margin-top:0;"></p>
+                <div class="btn-grid">
+                    <button id="btn-pc" onclick="selectDevice('PC')">PC / LAPTOP</button>
+                    <button id="btn-mobile" onclick="selectDevice('Mobile')">MOBILE</button>
+                </div>
+            </div>
+
+            <div id="step-name" class="step">
+                <p id="name-prompt" style="margin-top:0;"></p>
+                <input type="text" id="player-name" maxlength="15" value="Operator_01">
+                <button onclick="confirmName()" style="margin-top:20px; width:100%;">PROCEED</button>
+            </div>
+
+            <div id="step-tutorial" class="step">
+                <p id="tutorial-title" style="margin-top:0; font-weight:bold; color:#00ffcc;"></p>
+                <div id="tutorial-text" class="instructions"></div>
+                <button onclick="startGame()" style="margin-top:20px; width:100%;" id="btn-start-game"></button>
+            </div>
+        </div>
+    </div>
+
+    <div id="ad-modal">
+        <div class="ad-box">
+            <h2 id="ad-title">SYSTEM CRASHED</h2>
+            <p id="ad-desc"></p>
+            <div style="margin-top:25px; display:flex; gap:15px; justify-content:center;">
+                <button onclick="watchRewardAd()" style="border-color:#00ffcc; color:#00ffcc;" id="btn-watch-ad"></button>
+                <button onclick="skipAd()" style="border-color:#64748b; color:#64748b;" id="btn-skip-ad"></button>
+            </div>
+        </div>
+    </div>
+
+    <div id="ending-screen">
+        <div class="ending-title" id="end-title"></div>
+        <div class="ending-story" id="end-story"></div>
+        <button onclick="location.reload()" id="btn-restart-all">REBOOT SYSTEM</button>
+    </div>
+
+    <div id="game-container"></div>
+
+    <script>
+        // মাল্টি-ল্যাঙ্গুয়েজ লোকালাইজেশন ডেটা
+        const languages = {
+            en: {
+                devicePrompt: "SELECT HARDWARE INTERFACE",
+                namePrompt: "ENTER OPERATOR IDENTITY",
+                tutorialTitle: "TRANSMISSION PROTOCOLS",
+                pcInstructions: "• CONTROLS: Press [ SPACEBAR ] or [ UP ARROW ] to perform jumps.\\n• HAZARDS: Realistic laser grids and grid collapses will trigger high-voltage critical failures.\\n• OBJECTIVE: Navigate through the hyper-realistic cyber district. Secure the core at 5,000 score to decide your fate.",
+                mobileInstructions: "• CONTROLS: [ TAP ] anywhere on the screen to perform jump commands.\\n• HAZARDS: Laser barriers and high-voltage shocks. Timing is critical.\\n• OBJECTIVE: Reach 5,000 points to penetrate the Nexus Secure Core and trigger the cinematic ending.",
+                startGame: "INITIALIZE MATRIX GRID",
+                deadTitle: "CRITICAL FAILURE",
+                deadDesc: "Watch an ad transmission to override death and revive at checkpoint, or wipe memory and start over.",
+                watchAd: "WATCH AD (REVIVE)",
+                restart: "RESTART FROM ZERO"
+            },
+            bn: {
+                devicePrompt: "আপনার ডিভাইস নির্বাচন করুন",
+                namePrompt: "অপারেটরের নাম বা আইডি দিন",
+                tutorialTitle: "গেম খেলার নিয়মাবলী",
+                pcInstructions: "• কন্ট্রোল: লাফানোর জন্য কীবোর্ডের [ SPACEBAR ] অথবা [ UP ARROW ] চাপুন।\\n• বিপদসমূহ: রিয়ালিস্টিক লেজার গ্রিড এবং বৈদ্যুতিক ফাঁদ এড়িয়ে চলুন। নিচে পড়ে গেলে বা ফাঁদে লাগলে সিস্টেম ক্র্যাশ করবে।\\n• লক্ষ্য: সাইবার ডিস্ট্রিক্ট পার হয়ে ৫,০০০ স্কোর পূরণ করে মেইনফ্রেমে প্রবেশ করুন এবং আপনার ভাগ্য উন্মোচন করুন।",
+                mobileInstructions: "• কন্ট্রোল: স্ক্রিনের যেকোনো জায়গায় [ TAP ] করে রোবটটিকে লাফ দেওয়ান।\\n• বিপদসমূহ: কারেন্টের লেজার বেরিয়ার এবং ভেঙে পড়া প্ল্যাটফর্ম।\\n• লক্ষ্য: ৫,০০০ পয়েন্ট সংগ্রহ করে নেক্সাস কোর সুরক্ষিত করুন এবং জোড়া ক্লাইম্যাক্সের যেকোনো একটি শেষ দৃশ্য উপভোগ করুন।",
+                startGame: "ম্যাট্রিক্স গ্রিড চালু করুন",
+                deadTitle: "সিস্টেম ক্র্যাশ করেছে!",
+                deadDesc: "যেখানে মরেছেন সেখান থেকে খেলা শুরু করতে একটি ছোট ভিডিও বিজ্ঞাপন দেখুন, অথবা ০ স্কোর নিয়ে শুরু থেকে খেলুন।",
+                watchAd: "অ্যাড দেখুন (রিভাইভ)",
+                restart: "শুরু থেকে খেলুন"
+            }
+        };
+
+        let selectedLang = 'en';
+        let selectedDevice = 'PC';
+        let operatorName = 'Operator_01';
+        let gameHasStarted = false;
+        let phaserGameInstance = null;
+
+        function selectLang(lang) {
+            selectedLang = lang;
+            document.getElementById('device-prompt').innerText = languages[lang].devicePrompt;
+            document.getElementById('step-lang').classList.remove('active');
+            document.getElementById('step-device').classList.add('active');
+        }
+
+        function selectDevice(device) {
+            selectedDevice = device;
+            document.getElementById('name-prompt').innerText = languages[selectedLang].namePrompt;
+            document.getElementById('step-device').classList.remove('active');
+            document.getElementById('step-name').classList.add('active');
+        }
+
+        function confirmName() {
+            let val = document.getElementById('player-name').value.trim();
+            if(val) operatorName = val;
+            
+            document.getElementById('tutorial-title').innerText = languages[selectedLang].tutorialTitle;
+            document.getElementById('tutorial-text').innerText = selectedDevice === 'PC' ? languages[selectedLang].pcInstructions : languages[selectedLang].mobileInstructions;
+            document.getElementById('btn-start-game').innerText = languages[selectedLang].startGame;
+            
+            document.getElementById('step-name').classList.remove('active');
+            document.getElementById('step-tutorial').classList.add('active');
+        }
+
+        function startGame() {
+            document.getElementById('setup-screen').style.display = 'none';
+            gameHasStarted = true;
+            initPhaserGame();
+        }
+
+        // রিওয়ার্ডেড বিজ্ঞাপনের সিমুলেশন (গুগল অ্যাডসেন্স ইন্টিগ্রেশন ফ্রেম)
+        let currentScenePointer = null;
+
+        function triggerDeathMenu(scene) {
+            currentScenePointer = scene;
+            document.getElementById('ad-title').innerText = languages[selectedLang].deadTitle;
+            document.getElementById('ad-desc').innerText = languages[selectedLang].deadDesc;
+            document.getElementById('btn-watch-ad').innerText = languages[selectedLang].watchAd;
+            document.getElementById('btn-skip-ad').innerText = languages[selectedLang].restart;
+            document.getElementById('ad-modal').style.display = 'flex';
+        }
+
+        function watchRewardAd() {
+            // আসল বিজ্ঞপ্তির জন্য গিটহাবে এখানে Google AdSense API বসানো যাবে
+            alert("Simulating Video Ad Stream... (5 Seconds Network Check)");
+            setTimeout(() => {
+                document.getElementById('ad-modal').style.display = 'none';
+                if(currentScenePointer) currentScenePointer.revivePlayer();
+            }, 1000);
+        }
+
+        function skipAd() {
+            document.getElementById('ad-modal').style.display = 'none';
+            if(currentScenePointer) currentScenePointer.resetWholeGame();
+        }
+
+        // ভাগ্যের ওপর ভিত্তি করে সিনেমার মতো জোড়া এন্ডিং নির্ধারণকারী অ্যালগরিদম
+        function triggerCinematicEnding() {
+            if(phaserGameInstance) phaserGameInstance.destroy(true);
+            
+            let screen = document.getElementById('ending-screen');
+            let title = document.getElementById('end-title');
+            let story = document.getElementById('end-story');
+            
+            let isHappyEnding = Math.random() > 0.5; // ৫০/৫০ ভাগ্যের চাকা লজিক
+            
+            if(isHappyEnding) {
+                screen.style.background = "radial-gradient(circle, #0c2b3a 0%, #030a10 100%)";
+                title.style.color = "#00ffcc";
+                title.style.textShadow = "0 0 15px #00ffcc";
+                
+                if(selectedLang === 'en') {
+                    title.innerText = "🎬 HAPPY ENDING: THE RESURGENCE";
+                    story.innerText = "The Core terminal connects successfully! Operator [" + operatorName + "], your calculations saved the infrastructure. Neon blue pulses back into the grid trees. Unit-01 looks back into your camera lens, flashing a bright green digital smiley face. System status: SECURE.";
+                } else {
+                    title.innerText = "🎬 হ্যাপি এন্ডিং: মহাজাগতিক পুনরুত্থান";
+                    story.innerText = "কোর টার্মিনাল সফলভাবে সংযুক্ত হয়েছে! অপারেটর [" + operatorName + "], আপনার নিখুঁত টাইমিং বিশ্বকে রক্ষা করেছে। সিস্টেম রিস্টোর হওয়ার সাথে সাথে রোবটটি স্ক্রিনের দিকে ফিরে তাকাল এবং তার ডিজিটাল চোখে একটি সুন্দর হাসিমুখ ভেসে উঠল। আপনি লেজেন্ডারি প্রিমিয়াম ব্যাকগ্রাউন্ড বোনাস হিসেবে আনলক করেছেন!";
+                }
+            } else {
+                screen.style.background = "radial-gradient(circle, #3a0c14 0%, #0a0305 100%)";
+                title.style.color = "#ff0055";
+                title.style.textShadow = "0 0 15px #ff0055";
+                
+                if(selectedLang === 'en') {
+                    title.innerText = "🎬 SAD ENDING: THE CRITICAL SACRIFICE";
+                    story.innerText = "Emergency klaxons blare in high-intensity red! Melancholic piano music starts. To save the logs and memory of Operator [" + operatorName + "], Unit-01 chooses self-sacrifice, embedding itself straight into the exposed high-voltage generator line. Lights slowly fade to complete blackness. Rest in peace, Unit-01.";
+                } else {
+                    title.innerText = "🎬 স্যাড এন্ডিং: রোবটের আত্মত্যাগ";
+                    story.innerText = "লাল রঙের ইমার্জেন্সি লাইট জ্বলে উঠল! ব্যাকগ্রাউন্ডে বেজে উঠল অত্যন্ত মন খারাপ করা পিয়ানো মেলোডি। অপারেটর [" + operatorName + "]-এর সমস্ত মেমরি ফাইল সুরক্ষিত রাখতে রোবটটি নিজেকে উচ্চ ভোল্টেজ কোরের সাথে শর্ট করার সিদ্ধান্ত নেয়। রোবটের সিস্টেমটি আস্তে আস্তে বন্ধ হয়ে যায় এবং চোখের সামনে স্ক্রিনটি চিরতরে অন্ধকার হয়ে যায়। বিদায়, ইউনিট-০১!";
+                }
+            }
+            screen.style.display = "flex";
+        }
+
+        // Phaser 3 কোর মেকানিক্স এবং ইঞ্জিন কোড ব্লক
+        function initPhaserGame() {
+            const config = {
+                type: Phaser.AUTO,
+                width: window.innerWidth,
+                height: window.innerHeight,
+                parent: 'game-container',
+                backgroundColor: '#05070f',
+                physics: {
+                    default: 'arcade',
+                    arcade: { gravity: { y: 1200 }, debug: false }
+                },
+                scene: { preload: preload, create: create, update: update }
+            };
+            phaserGameInstance = new Phaser.Game(config);
+        }
+
+        function preload() {}
+
+        let player, platforms, laserBarriers, score = 0, scoreText, cursors, audioContext, targetScore = 5000;
+
+        function create() {
+            const scene = this;
+            score = 0;
+            
+            // ব্যাকগ্রাউন্ড সিন্থওয়েভ মিউজিক চালু
+            playLevelSynthMusic();
+            createRealisticNebulaBg(this);
+
+            platforms = this.physics.add.staticGroup();
+            let baseGround = this.add.grid(window.innerWidth/2, window.innerHeight - 20, window.innerWidth, 40, 20, 20, 0x111827).setStrokeStyle(2, 0x00ffcc);
+            platforms.add(baseGround);
+            this.physics.add.existing(baseGround, true);
+
+            for(let i=0; i<5; i++){
+                spawnPlatform(this, 300 + (i * 350), window.innerHeight - 120 - (Math.random()*150));
+            }
+
+            laserBarriers = this.physics.add.group({ allowGravity: false });
+            spawnLaserTrap(this, 600, window.innerHeight - 250);
+
+            // রিয়ালিস্টিক মেটালিক সাইবার রোবট ডিজাইন
+            player = this.add.container(150, window.innerHeight - 150);
+            let botBody = this.add.rectangle(0, 0, 30, 50, 0x111827).setStrokeStyle(3, 0xff0055);
+            let botEye = this.add.rectangle(8, -10, 15, 6, 0x00ffcc);
+            player.add([botBody, botEye]);
+            
+            this.physics.add.existing(player);
+            player.body.setGravityY(400);
+
+            scoreText = this.add.text(20, 20, '', {
+                fontFamily: '"Courier New", Courier, monospace',
+                fontSize: '18px', fill: '#00ffcc', backgroundColor: '#0a0f1d', padding: { x: 10, y: 5 }
+            }).setScrollFactor(0);
+
+            this.physics.add.collider(player, platforms);
+            this.physics.add.overlap(player, laserBarriers, hitHazard, null, this);
+
+            // ডিভাইস অনুযায়ী কন্ট্রোল অ্যাসাইনমেন্ট
+            if (selectedDevice === 'PC') {
+                cursors = this.input.keyboard.createCursorKeys();
+                this.input.keyboard.on('keydown-SPACE', triggerJump, this);
+                this.input.keyboard.on('keydown-UP', triggerJump, this);
+            } else {
+                this.input.on('pointerdown', triggerJump, this);
+            }
+
+            this.cameras.main.setBounds(0, 0, 999999, window.innerHeight);
+            this.cameras.main.startFollow(player, true, 0.1, 0, -100, 0);
+        }
+
+        function update(time, delta) {
+            player.body.setVelocityX(220 + (score * 0.02)); // স্কোর বাড়ার সাথে সাথে স্পিড বাড়ে (অ্যাডিকশন বাড়াতে)
+
+            let rightmostPlatformX = 0;
+            platforms.getChildren().forEach(p => { if(p.x > rightmostPlatformX) rightmostPlatformX = p.x; });
+            if(rightmostPlatformX < player.x + window.innerWidth + 400) {
+                spawnPlatform(this, rightmostPlatformX + 250 + (Math.random()*150), window.innerHeight - 100 - (Math.random()*220));
+                if(Math.random() > 0.4) {
+                    spawnLaserTrap(this, rightmostPlatformX + 400, window.innerHeight - 150 - (Math.random()*200));
+                }
+            }
+
+            platforms.getChildren().forEach(p => { if(p.x < player.x - 400) p.destroy(); });
+            laserBarriers.getChildren().forEach(l => { if(l.x < player.x - 400) l.destroy(); });
+
+            if(player.body.velocity.x > 0 && player.y < window.innerHeight + 100) {
+                score += Math.floor(delta * 0.1);
+                scoreText.setText(operatorName.toUpperCase() + " LOGGED ENCRYPTION: " + score + " / " + targetScore);
+            }
+
+            if(score >= targetScore) triggerCinematicEnding();
+
+            if(player.y > window.innerHeight + 150) {
+                this.physics.pause();
+                playCrashSound();
+                triggerDeathMenu(this);
+            }
+        }
+
+        function triggerJump() {
+            if(player.body.touching.down || player.body.blocked.down) {
+                player.body.setVelocityY(-620);
+                playJumpAudio();
+            }
+        }
+
+        function hitHazard() {
+            this.physics.pause();
+            playCrashSound();
+            triggerDeathMenu(this);
+        }
+
+        this.revivePlayer = function() {
+            this.physics.resume();
+            player.y = window.innerHeight - 300;
+            player.body.setVelocityY(0);
+            player.x += 120; // বিপদ পার করে রিভাইভ
+        }
+
+        this.resetWholeGame = function() {
+            score = 0;
+            this.scene.restart();
+        }
+
+        function spawnPlatform(scene, x, y) {
+            let width = 150 + Math.random()*150;
+            let p = scene.add.grid(x, y, width, 25, 15, 15, 0x111827).setStrokeStyle(2, 0xff0055);
+            platforms.add(p);
+            scene.physics.add.existing(p, true);
+        }
+
+        function spawnLaserTrap(scene, x, y) {
+            let laser = scene.add.rectangle(x, y, 6, 80, 0x00ffcc).setAlpha(0.8);
+            scene.tweens.add({ targets: laser, alpha: 0.2, duration: 200, yoyo: true, loop: -1 });
+            laserBarriers.add(laser);
+            scene.physics.add.existing(laser);
+        }
+
+        function createRealisticNebulaBg(scene) {
+            let bgGraphics = scene.add.graphics().setScrollFactor(0);
+            bgGraphics.fillGradientStyle(0x05070f, 0x05070f, 0x10152b, 0x10152b, 1);
+            bgGraphics.fillRect(0, 0, window.innerWidth, window.innerHeight);
+            bgGraphics.lineStyle(1, 0x1e293b, 0.4);
+            for(let i=0; i<window.innerWidth; i+=40) { bgGraphics.line(i, 0, i, window.innerHeight); }
+            for(let j=0; j<window.innerHeight; j+=40) { bgGraphics.line(0, j, window.innerWidth, j); }
+        }
+
+        // 🎵 রিয়েল-টাইম সাউন্ড ও মিউজিক জেনারেটর (Web Audio API)
+        let bgOscillator, bgGainNode;
+
+        function initAudio() {
+            if (!audioContext) audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        }
+
+        function playLevelSynthMusic() {
+            try {
+                initAudio();
+                if(bgOscillator) bgOscillator.stop();
+
+                bgOscillator = audioContext.createOscillator();
+                bgGainNode = audioContext.createGain();
+                bgOscillator.type = 'sawtooth';
+                bgOscillator.frequency.setValueAtTime(65.41, audioContext.currentTime); // Deep Low C Note Bass
+                bgGainNode.gain.setValueAtTime(0.05, audioContext.currentTime);
+                
+                bgOscillator.connect(bgGainNode);
+                bgGainNode.connect(audioContext.destination);
+                bgOscillator.start();
+
+                // 140 BPM বাসের লুপ পালস তৈরি (অ্যাডিক্টিভ সিন্থ ভাইব)
+                setInterval(() => {
+                    if(gameHasStarted && phaserGameInstance && !phaserGameInstance.loop.isPaused) {
+                        triggerBassPulse();
+                    }
+                }, 420);
+            } catch(e) {}
+        }
+
+        function triggerBassPulse() {
+            initAudio();
+            let osc = audioContext.createOscillator();
+            let gain = audioContext.createGain();
+            osc.type = 'triangle';
+            let freqs = [130.81, 146.83, 164.81, 196.00]; 
+            let f = freqs[Math.floor(Math.random()*freqs.length)];
+            osc.frequency.setValueAtTime(f, audioContext.currentTime);
+            gain.gain.setValueAtTime(0.07, audioContext.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + 0.35);
+            osc.connect(gain);
+            gain.connect(audioContext.destination);
+            osc.start();
+            osc.stop(audioContext.currentTime + 0.4);
+        }
+
+        function playJumpAudio() {
+            initAudio();
+            let osc = audioContext.createOscillator();
+            let gain = audioContext.createGain();
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(300, audioContext.currentTime);
+            osc.frequency.exponentialRampToValueAtTime(800, audioContext.currentTime + 0.15);
+            gain.gain.setValueAtTime(0.1, audioContext.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + 0.18);
+            osc.connect(gain);
+            gain.connect(audioContext.destination);
+            osc.start();
+            osc.stop(audioContext.currentTime + 0.2);
+        }
+
+        function playCrashSound() {
+            initAudio();
+            let osc = audioContext.createOscillator();
+            let gain = audioContext.createGain();
+            osc.type = 'sawtooth';
+            osc.frequency.setValueAtTime(180, audioContext.currentTime);
+            osc.frequency.linearRampToValueAtTime(40, audioContext.currentTime + 0.4);
+            gain.gain.setValueAtTime(0.18, audioContext.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + 0.45);
+            osc.connect(gain);
+            gain.connect(audioContext.destination);
+            osc.start();
+            osc.stop(audioContext.currentTime + 0.5);
+        }
+
+        // ব্রাউজারের অডিও পলিসি আনলক করার জন্য গ্লোবাল ইভেন্ট লিসেনার
+        window.addEventListener('click', () => { initAudio(); if(audioContext && audioContext.state === 'suspended') audioContext.resume(); });
+        window.addEventListener('touchstart', () => { initAudio(); if(audioContext && audioContext.state === 'suspended') audioContext.resume(); });
+    </script>
+</body>
+</html>
