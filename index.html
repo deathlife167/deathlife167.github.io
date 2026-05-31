@@ -17,7 +17,6 @@
         .btn-grid { display: grid; grid-template-columns: 140px 140px; gap: 15px; justify-content: center; margin-top: 20px; }
         button { background: #070a14; border: 2px solid #ff0055; color: #ff0055; padding: 12px 20px; font-size: 1rem; font-family: inherit; font-weight: bold; cursor: pointer; border-radius: 4px; transition: all 0.3s ease; box-shadow: 0 0 10px rgba(255,0,85,0.2); }
         button:hover { background: #ff0055; color: #fff; box-shadow: 0 0 15px #ff0055; }
-        button.selected { background: #00ffcc; color: #05070f; border-color: #00ffcc; box-shadow: 0 0 15px #00ffcc; }
         input[type="text"] { background: #05070f; border: 2px solid #00ffcc; padding: 12px; color: #00ffcc; font-size: 1.1rem; font-family: inherit; text-align: center; width: 100%; margin-top: 15px; border-radius: 4px; outline: none; }
         .instructions { font-size: 0.95rem; line-height: 1.5; color: #94a3b8; margin-top: 15px; text-align: left; background: #070a14; padding: 15px; border-left: 3px solid #00ffcc; max-height: 200px; overflow-y: auto; }
         #game-container { width: 100%; height: 100%; display: block; }
@@ -83,30 +82,29 @@
     <div id="game-container"></div>
 
     <script>
-        // মাল্টি-ল্যাঙ্গুয়েজ লোকালাইজেশন ডেটা
         const languages = {
             en: {
                 devicePrompt: "SELECT HARDWARE INTERFACE",
                 namePrompt: "ENTER OPERATOR IDENTITY",
                 tutorialTitle: "TRANSMISSION PROTOCOLS",
-                pcInstructions: "• CONTROLS: Press [ SPACEBAR ] or [ UP ARROW ] to perform jumps.\\n• HAZARDS: Realistic laser grids and grid collapses will trigger high-voltage critical failures.\\n• OBJECTIVE: Navigate through the hyper-realistic cyber district. Secure the core at 5,000 score to decide your fate.",
-                mobileInstructions: "• CONTROLS: [ TAP ] anywhere on the screen to perform jump commands.\\n• HAZARDS: Laser barriers and high-voltage shocks. Timing is critical.\\n• OBJECTIVE: Reach 5,000 points to penetrate the Nexus Secure Core and trigger the cinematic ending.",
+                pcInstructions: "• CONTROLS: Press [ SPACEBAR ] or [ UP ARROW ] to perform jumps.\n• HAZARDS: Realistic laser grids. Secure the core at 5,000 score to decide your fate.",
+                mobileInstructions: "• CONTROLS: [ TAP ] anywhere on the screen to perform jump commands.\n• HAZARDS: Laser barriers. Reach 5,000 points to penetrate the Nexus Secure Core.",
                 startGame: "INITIALIZE MATRIX GRID",
                 deadTitle: "CRITICAL FAILURE",
-                deadDesc: "Watch an ad transmission to override death and revive at checkpoint, or wipe memory and start over.",
-                watchAd: "WATCH AD (REVIVE)",
+                deadDesc: "Revive at checkpoint or restart from zero.",
+                watchAd: "REVIVE SYSTEM",
                 restart: "RESTART FROM ZERO"
             },
             bn: {
                 devicePrompt: "আপনার ডিভাইস নির্বাচন করুন",
                 namePrompt: "অপারেটরের নাম বা আইডি দিন",
-                tutorialTitle: "গেম খেলার নিয়মাবলী",
-                pcInstructions: "• কন্ট্রোল: লাফানোর জন্য কীবোর্ডের [ SPACEBAR ] অথবা [ UP ARROW ] চাপুন।\\n• বিপদসমূহ: রিয়ালিস্টিক লেজার গ্রিড এবং বৈদ্যুতিক ফাঁদ এড়িয়ে চলুন। নিচে পড়ে গেলে বা ফাঁদে লাগলে সিস্টেম ক্র্যাশ করবে।\\n• লক্ষ্য: সাইবার ডিস্ট্রিক্ট পার হয়ে ৫,০০০ স্কোর পূরণ করে মেইনফ্রেমে প্রবেশ করুন এবং আপনার ভাগ্য উন্মোচন করুন।",
-                mobileInstructions: "• কন্ট্রোল: স্ক্রিনের যেকোনো জায়গায় [ TAP ] করে রোবটটিকে লাফ দেওয়ান।\\n• বিপদসমূহ: কারেন্টের লেজার বেরিয়ার এবং ভেঙে পড়া প্ল্যাটফর্ম।\\n• লক্ষ্য: ৫,০০০ পয়েন্ট সংগ্রহ করে নেক্সাস কোর সুরক্ষিত করুন এবং জোড়া ক্লাইম্যাক্সের যেকোনো একটি শেষ দৃশ্য উপভোগ করুন।",
+                tutorialTitle: "গেম খেলার নিয়মাবলী",
+                pcInstructions: "• কন্ট্রোল: লাফানোর জন্য কীবোর্ডের [ SPACEBAR ] অথবা [ UP ARROW ] চাপুন।\n• লক্ষ্য: সাইবার ডিস্ট্রিক্ট পার হয়ে ৫,০০০ স্কোর পূরণ করে মেইনফ্রেমে প্রবেশ করুন।",
+                mobileInstructions: "• কন্ট্রোল: স্ক্রিনের যেকোনো জায়গায় [ TAP ] করে রোবটটিকে লাফ দেওয়ান।\n• লক্ষ্য: ৫,০০০ পয়েন্ট সংগ্রহ করে নেক্সাস কোর সুরক্ষিত করুন।",
                 startGame: "ম্যাট্রিক্স গ্রিড চালু করুন",
                 deadTitle: "সিস্টেম ক্র্যাশ করেছে!",
-                deadDesc: "যেখানে মরেছেন সেখান থেকে খেলা শুরু করতে একটি ছোট ভিডিও বিজ্ঞাপন দেখুন, অথবা ০ স্কোর নিয়ে শুরু থেকে খেলুন।",
-                watchAd: "অ্যাড দেখুন (রিভাইভ)",
+                deadDesc: "যেখানে মরেছেন সেখান থেকে খেলা শুরু করতে রিভাইভ করুন, অথবা ০ স্কোর নিয়ে শুরু থেকে খেলুন।",
+                watchAd: "রিভাইভ করুন",
                 restart: "শুরু থেকে খেলুন"
             }
         };
@@ -115,7 +113,9 @@
         let selectedDevice = 'PC';
         let operatorName = 'Operator_01';
         let gameHasStarted = false;
+        let isEngineReady = false;
         let phaserGameInstance = null;
+        let musicIntervalId = null;
 
         function selectLang(lang) {
             selectedLang = lang;
@@ -134,11 +134,9 @@
         function confirmName() {
             let val = document.getElementById('player-name').value.trim();
             if(val) operatorName = val;
-            
             document.getElementById('tutorial-title').innerText = languages[selectedLang].tutorialTitle;
             document.getElementById('tutorial-text').innerText = selectedDevice === 'PC' ? languages[selectedLang].pcInstructions : languages[selectedLang].mobileInstructions;
             document.getElementById('btn-start-game').innerText = languages[selectedLang].startGame;
-            
             document.getElementById('step-name').classList.remove('active');
             document.getElementById('step-tutorial').classList.add('active');
         }
@@ -149,11 +147,11 @@
             initPhaserGame();
         }
 
-        // রিওয়ার্ডেড বিজ্ঞাপনের সিমুলেশন (গুগল অ্যাডসেন্স ইন্টিগ্রেশন ফ্রেম)
         let currentScenePointer = null;
 
         function triggerDeathMenu(scene) {
             currentScenePointer = scene;
+            stopMusicLoop();
             document.getElementById('ad-title').innerText = languages[selectedLang].deadTitle;
             document.getElementById('ad-desc').innerText = languages[selectedLang].deadDesc;
             document.getElementById('btn-watch-ad').innerText = languages[selectedLang].watchAd;
@@ -162,12 +160,11 @@
         }
 
         function watchRewardAd() {
-            // আসল বিজ্ঞপ্তির জন্য গিটহাবে এখানে Google AdSense API বসানো যাবে
-            alert("Simulating Video Ad Stream... (5 Seconds Network Check)");
-            setTimeout(() => {
-                document.getElementById('ad-modal').style.display = 'none';
-                if(currentScenePointer) currentScenePointer.revivePlayer();
-            }, 1000);
+            document.getElementById('ad-modal').style.display = 'none';
+            if(currentScenePointer) {
+                currentScenePointer.revivePlayer();
+                startMusicLoop();
+            }
         }
 
         function skipAd() {
@@ -175,45 +172,40 @@
             if(currentScenePointer) currentScenePointer.resetWholeGame();
         }
 
-        // ভাগ্যের ওপর ভিত্তি করে সিনেমার মতো জোড়া এন্ডিং নির্ধারণকারী অ্যালগরিদম
         function triggerCinematicEnding() {
+            stopMusicLoop();
             if(phaserGameInstance) phaserGameInstance.destroy(true);
-            
             let screen = document.getElementById('ending-screen');
             let title = document.getElementById('end-title');
             let story = document.getElementById('end-story');
-            
-            let isHappyEnding = Math.random() > 0.5; // ৫০/৫০ ভাগ্যের চাকা লজিক
+            let isHappyEnding = Math.random() > 0.5;
             
             if(isHappyEnding) {
                 screen.style.background = "radial-gradient(circle, #0c2b3a 0%, #030a10 100%)";
                 title.style.color = "#00ffcc";
                 title.style.textShadow = "0 0 15px #00ffcc";
-                
                 if(selectedLang === 'en') {
                     title.innerText = "🎬 HAPPY ENDING: THE RESURGENCE";
-                    story.innerText = "The Core terminal connects successfully! Operator [" + operatorName + "], your calculations saved the infrastructure. Neon blue pulses back into the grid trees. Unit-01 looks back into your camera lens, flashing a bright green digital smiley face. System status: SECURE.";
+                    story.innerText = "The Core terminal connects successfully! Operator [" + operatorName + "], your calculations saved the infrastructure. Neon blue pulses back into the grid trees.";
                 } else {
                     title.innerText = "🎬 হ্যাপি এন্ডিং: মহাজাগতিক পুনরুত্থান";
-                    story.innerText = "কোর টার্মিনাল সফলভাবে সংযুক্ত হয়েছে! অপারেটর [" + operatorName + "], আপনার নিখুঁত টাইমিং বিশ্বকে রক্ষা করেছে। সিস্টেম রিস্টোর হওয়ার সাথে সাথে রোবটটি স্ক্রিনের দিকে ফিরে তাকাল এবং তার ডিজিটাল চোখে একটি সুন্দর হাসিমুখ ভেসে উঠল। আপনি লেজেন্ডারি প্রিমিয়াম ব্যাকগ্রাউন্ড বোনাস হিসেবে আনলক করেছেন!";
+                    story.innerText = "কোর টার্মিনাল সফলভাবে সংযুক্ত হয়েছে! অপারেটর [" + operatorName + "], আপনার নিখুঁত টাইমিং বিশ্বকে রক্ষা করেছে।";
                 }
             } else {
                 screen.style.background = "radial-gradient(circle, #3a0c14 0%, #0a0305 100%)";
                 title.style.color = "#ff0055";
                 title.style.textShadow = "0 0 15px #ff0055";
-                
                 if(selectedLang === 'en') {
                     title.innerText = "🎬 SAD ENDING: THE CRITICAL SACRIFICE";
-                    story.innerText = "Emergency klaxons blare in high-intensity red! Melancholic piano music starts. To save the logs and memory of Operator [" + operatorName + "], Unit-01 chooses self-sacrifice, embedding itself straight into the exposed high-voltage generator line. Lights slowly fade to complete blackness. Rest in peace, Unit-01.";
+                    story.innerText = "Emergency klaxons blare! To save the logs of Operator [" + operatorName + "], Unit-01 chooses self-sacrifice.";
                 } else {
                     title.innerText = "🎬 স্যাড এন্ডিং: রোবটের আত্মত্যাগ";
-                    story.innerText = "লাল রঙের ইমার্জেন্সি লাইট জ্বলে উঠল! ব্যাকগ্রাউন্ডে বেজে উঠল অত্যন্ত মন খারাপ করা পিয়ানো মেলোডি। অপারেটর [" + operatorName + "]-এর সমস্ত মেমরি ফাইল সুরক্ষিত রাখতে রোবটটি নিজেকে উচ্চ ভোল্টেজ কোরের সাথে শর্ট করার সিদ্ধান্ত নেয়। রোবটের সিস্টেমটি আস্তে আস্তে বন্ধ হয়ে যায় এবং চোখের সামনে স্ক্রিনটি চিরতরে অন্ধকার হয়ে যায়। বিদায়, ইউনিট-০১!";
+                    story.innerText = "লাল রঙের ইমার্জেন্সি লাইট জ্বলে উঠল! অপারেটর [" + operatorName + "]-এর সমস্ত মেমরি ফাইল সুরক্ষিত রাখতে রোবটটি নিজেকে উৎসর্গ করলো।";
                 }
             }
             screen.style.display = "flex";
         }
 
-        // Phaser 3 কোর মেকানিক্স এবং ইঞ্জিন কোড ব্লক
         function initPhaserGame() {
             const config = {
                 type: Phaser.AUTO,
@@ -237,9 +229,9 @@
         function create() {
             const scene = this;
             score = 0;
+            isEngineReady = true;
             
-            // ব্যাকগ্রাউন্ড সিন্থওয়েভ মিউজিক চালু
-            playLevelSynthMusic();
+            startMusicLoop();
             createRealisticNebulaBg(this);
 
             platforms = this.physics.add.staticGroup();
@@ -254,7 +246,6 @@
             laserBarriers = this.physics.add.group({ allowGravity: false });
             spawnLaserTrap(this, 600, window.innerHeight - 250);
 
-            // রিয়ালিস্টিক মেটালিক সাইবার রোবট ডিজাইন
             player = this.add.container(150, window.innerHeight - 150);
             let botBody = this.add.rectangle(0, 0, 30, 50, 0x111827).setStrokeStyle(3, 0xff0055);
             let botEye = this.add.rectangle(8, -10, 15, 6, 0x00ffcc);
@@ -271,7 +262,6 @@
             this.physics.add.collider(player, platforms);
             this.physics.add.overlap(player, laserBarriers, hitHazard, null, this);
 
-            // ডিভাইস অনুযায়ী কন্ট্রোল অ্যাসাইনমেন্ট
             if (selectedDevice === 'PC') {
                 cursors = this.input.keyboard.createCursorKeys();
                 this.input.keyboard.on('keydown-SPACE', triggerJump, this);
@@ -285,7 +275,9 @@
         }
 
         function update(time, delta) {
-            player.body.setVelocityX(220 + (score * 0.02)); // স্কোর বাড়ার সাথে সাথে স্পিড বাড়ে (অ্যাডিকশন বাড়াতে)
+            if(!isEngineReady || !player || !player.body) return;
+
+            player.body.setVelocityX(220 + (score * 0.02));
 
             let rightmostPlatformX = 0;
             platforms.getChildren().forEach(p => { if(p.x > rightmostPlatformX) rightmostPlatformX = p.x; });
@@ -314,6 +306,7 @@
         }
 
         function triggerJump() {
+            if(!player || !player.body) return;
             if(player.body.touching.down || player.body.blocked.down) {
                 player.body.setVelocityY(-620);
                 playJumpAudio();
@@ -330,7 +323,7 @@
             this.physics.resume();
             player.y = window.innerHeight - 300;
             player.body.setVelocityY(0);
-            player.x += 120; // বিপদ পার করে রিভাইভ
+            player.x += 120;
         }
 
         this.resetWholeGame = function() {
@@ -361,84 +354,144 @@
             for(let j=0; j<window.innerHeight; j+=40) { bgGraphics.line(0, j, window.innerWidth, j); }
         }
 
-        // 🎵 রিয়েল-টাইম সাউন্ড ও মিউজিক জেনারেটর (Web Audio API)
-        let bgOscillator, bgGainNode;
-
+        // 🎵 ADVANCED RETRO SYNTHWAVE MUSIC GENERATOR
+        let stepCount = 0;
         function initAudio() {
             if (!audioContext) audioContext = new (window.AudioContext || window.webkitAudioContext)();
         }
 
-        function playLevelSynthMusic() {
-            try {
-                initAudio();
-                if(bgOscillator) bgOscillator.stop();
-
-                bgOscillator = audioContext.createOscillator();
-                bgGainNode = audioContext.createGain();
-                bgOscillator.type = 'sawtooth';
-                bgOscillator.frequency.setValueAtTime(65.41, audioContext.currentTime); // Deep Low C Note Bass
-                bgGainNode.gain.setValueAtTime(0.05, audioContext.currentTime);
-                
-                bgOscillator.connect(bgGainNode);
-                bgGainNode.connect(audioContext.destination);
-                bgOscillator.start();
-
-                // 140 BPM বাসের লুপ পালস তৈরি (অ্যাডিক্টিভ সিন্থ ভাইব)
-                setInterval(() => {
-                    if(gameHasStarted && phaserGameInstance && !phaserGameInstance.loop.isPaused) {
-                        triggerBassPulse();
-                    }
-                }, 420);
-            } catch(e) {}
+        function startMusicLoop() {
+            initAudio();
+            stopMusicLoop();
+            
+            // 125 BPM (480ms per beat / 240ms per step)
+            musicIntervalId = setInterval(() => {
+                if (gameHasStarted && phaserGameInstance && !phaserGameInstance.loop.isPaused) {
+                    playCyberMusicStep();
+                }
+            }, 240);
         }
 
-        function triggerBassPulse() {
+        function stopMusicLoop() {
+            if (musicIntervalId) {
+                clearInterval(musicIntervalId);
+                musicIntervalId = null;
+            }
+        }
+
+        function playCyberMusicStep() {
             initAudio();
-            let osc = audioContext.createOscillator();
-            let gain = audioContext.createGain();
-            osc.type = 'triangle';
-            let freqs = [130.81, 146.83, 164.81, 196.00]; 
-            let f = freqs[Math.floor(Math.random()*freqs.length)];
-            osc.frequency.setValueAtTime(f, audioContext.currentTime);
-            gain.gain.setValueAtTime(0.07, audioContext.currentTime);
-            gain.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + 0.35);
-            osc.connect(gain);
-            gain.connect(audioContext.destination);
-            osc.start();
-            osc.stop(audioContext.currentTime + 0.4);
+            let now = audioContext.currentTime;
+
+            // 1. DRUM KICK (On every 2nd step - Heavy Cyber Club Pulse)
+            if (stepCount % 2 === 0) {
+                let kickOsc = audioContext.createOscillator();
+                let kickGain = audioContext.createGain();
+                kickOsc.type = 'sine';
+                kickOsc.frequency.setValueAtTime(150, now);
+                kickOsc.frequency.exponentialRampToValueAtTime(45, now + 0.12);
+                
+                kickGain.gain.setValueAtTime(0.25, now);
+                kickGain.gain.exponentialRampToValueAtTime(0.001, now + 0.15);
+                
+                kickOsc.connect(kickGain);
+                kickGain.connect(audioContext.destination);
+                kickOsc.start(now);
+                kickOsc.stop(now + 0.16);
+            }
+
+            // 2. RETRO CYBER BASSLINE (Dynamic Arpeggio Pattern)
+            let bassOsc = audioContext.createOscillator();
+            let bassGain = audioContext.createGain();
+            let bassFilter = audioContext.createBiquadFilter();
+            
+            bassOsc.type = 'triangle'; 
+            
+            // Cyber Synth Bass Notes (Progression in A Minor / C Major)
+            let notes = [55.00, 55.00, 65.41, 65.41, 73.42, 73.42, 87.31, 98.00]; 
+            let baseFreq = notes[Math.floor(stepCount / 4) % notes.length];
+            
+            // Create classic arpeggio jumping octave effect
+            if (stepCount % 2 === 1) baseFreq *= 2; 
+
+            bassOsc.frequency.setValueAtTime(baseFreq, now);
+            
+            bassFilter.type = 'lowpass';
+            bassFilter.frequency.setValueAtTime(400, now);
+
+            bassGain.gain.setValueAtTime(0.12, now);
+            bassGain.gain.exponentialRampToValueAtTime(0.01, now + 0.22);
+            
+            bassOsc.connect(bassFilter);
+            bassFilter.connect(bassGain);
+            bassGain.connect(audioContext.destination);
+            
+            bassOsc.start(now);
+            bassOsc.stop(now + 0.24);
+
+            // 3. CYBER HI-HAT EFFECTS (Electronic Shimmer)
+            if (stepCount % 4 === 2) {
+                let hatOsc = audioContext.createOscillator();
+                let hatGain = audioContext.createGain();
+                let hatFilter = audioContext.createBiquadFilter();
+                
+                hatOsc.type = 'sawtooth';
+                hatOsc.frequency.setValueAtTime(8000, now);
+                
+                hatFilter.type = 'highpass';
+                hatFilter.frequency.setValueAtTime(7000, now);
+                
+                hatGain.gain.setValueAtTime(0.02, now);
+                hatGain.gain.exponentialRampToValueAtTime(0.001, now + 0.05);
+                
+                hatOsc.connect(hatFilter);
+                hatFilter.connect(hatGain);
+                hatGain.connect(audioContext.destination);
+                hatOsc.start(now);
+                hatOsc.stop(now + 0.06);
+            }
+
+            stepCount++;
         }
 
         function playJumpAudio() {
             initAudio();
+            let now = audioContext.currentTime;
             let osc = audioContext.createOscillator();
             let gain = audioContext.createGain();
+            
             osc.type = 'sine';
-            osc.frequency.setValueAtTime(300, audioContext.currentTime);
-            osc.frequency.exponentialRampToValueAtTime(800, audioContext.currentTime + 0.15);
-            gain.gain.setValueAtTime(0.1, audioContext.currentTime);
-            gain.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + 0.18);
+            osc.frequency.setValueAtTime(280, now);
+            osc.frequency.exponentialRampToValueAtTime(950, now + 0.15);
+            
+            gain.gain.setValueAtTime(0.12, now);
+            gain.gain.exponentialRampToValueAtTime(0.001, now + 0.18);
+            
             osc.connect(gain);
             gain.connect(audioContext.destination);
-            osc.start();
-            osc.stop(audioContext.currentTime + 0.2);
+            osc.start(now);
+            osc.stop(now + 0.2);
         }
 
         function playCrashSound() {
             initAudio();
+            let now = audioContext.currentTime;
             let osc = audioContext.createOscillator();
-            let gain = audioContext.createGain();
+            let noiseGain = audioContext.createGain();
+            
             osc.type = 'sawtooth';
-            osc.frequency.setValueAtTime(180, audioContext.currentTime);
-            osc.frequency.linearRampToValueAtTime(40, audioContext.currentTime + 0.4);
-            gain.gain.setValueAtTime(0.18, audioContext.currentTime);
-            gain.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + 0.45);
-            osc.connect(gain);
-            gain.connect(audioContext.destination);
-            osc.start();
-            osc.stop(audioContext.currentTime + 0.5);
+            osc.frequency.setValueAtTime(140, now);
+            osc.frequency.linearRampToValueAtTime(30, now + 0.35);
+            
+            noiseGain.gain.setValueAtTime(0.25, now);
+            noiseGain.gain.exponentialRampToValueAtTime(0.001, now + 0.4);
+            
+            osc.connect(noiseGain);
+            noiseGain.connect(audioContext.destination);
+            osc.start(now);
+            osc.stop(now + 0.45);
         }
 
-        // ব্রাউজারের অডিও পলিসি আনলক করার জন্য গ্লোবাল ইভেন্ট লিসেনার
         window.addEventListener('click', () => { initAudio(); if(audioContext && audioContext.state === 'suspended') audioContext.resume(); });
         window.addEventListener('touchstart', () => { initAudio(); if(audioContext && audioContext.state === 'suspended') audioContext.resume(); });
     </script>
