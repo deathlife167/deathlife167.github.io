@@ -1,0 +1,356 @@
+const languages = {
+    en: {
+        devicePrompt: "SELECT HARDWARE INTERFACE",
+        namePrompt: "ENTER OPERATOR IDENTITY",
+        tutorialTitle: "TRANSMISSION PROTOCOLS",
+        pcInstructions: "• CONTROLS: Press [ SPACEBAR ] or [ UP ARROW ] to perform jumps.\n• HAZARDS: Realistic laser grids. Secure the core at 5,000 score to decide your fate.",
+        mobileInstructions: "• CONTROLS: [ TAP ] anywhere on the screen to perform jump commands.\n• HAZARDS: Laser barriers. Reach 5,000 points to penetrate the Nexus Secure Core.",
+        startGame: "INITIALIZE MATRIX GRID",
+        deadTitle: "CRITICAL FAILURE",
+        deadDesc: "Revive at checkpoint or restart from zero.",
+        watchAd: "REVIVE SYSTEM",
+        restart: "RESTART FROM ZERO"
+    },
+    bn: {
+        devicePrompt: "আপনার ডিভাইস নির্বাচন করুন",
+        namePrompt: "অপারেটরের নাম বা আইডি দিন",
+        tutorialTitle: "গেম খেলার নিয়মাবলী",
+        pcInstructions: "• কন্ট্রোল: লাফানোর জন্য কীবোর্ডের [ SPACEBAR ] অথবা [ UP ARROW ] চাপুন।\n• লক্ষ্য: সাইবার ডিস্ট্রিক্ট পার হয়ে ৫,০০০ স্কোর পূরণ করে মেইনফ্রেমে প্রবেশ করুন।",
+        mobileInstructions: "• কন্ট্রোল: স্ক্রিনের যেকোনো জায়গায় [ TAP ] করে রোবটটিকে লাফ দেওয়ান।\n• লক্ষ্য: ৫,০০০ পয়েন্ট সংগ্রহ করে নেক্সাস কোর সুরক্ষিত করুন।",
+        startGame: "ম্যাট্রিক্স গ্রিড চালু করুন",
+        deadTitle: "সিস্টেম ক্র্যাশ করেছে!",
+        deadDesc: "যেখানে মরেছেন সেখান থেকে খেলা শুরু করতে রিভাইভ করুন, অথবা ০ স্কোর নিয়ে শুরু থেকে খেলুন।",
+        watchAd: "রিভাইভ করুন",
+        restart: "শুরু থেকে খেলুন"
+    }
+};
+
+let selectedLang = 'en';
+let selectedDevice = 'PC';
+let operatorName = 'Operator_01';
+let gameHasStarted = false;
+let phaserGameInstance = null;
+let musicIntervalId = null;
+let audioContext = null;
+
+function selectLang(lang) {
+    selectedLang = lang;
+    document.getElementById('device-prompt').innerText = languages[lang].devicePrompt;
+    document.getElementById('step-lang').classList.remove('active');
+    document.getElementById('step-device').classList.add('active');
+}
+
+function selectDevice(device) {
+    selectedDevice = device;
+    document.getElementById('name-prompt').innerText = languages[selectedLang].namePrompt;
+    document.getElementById('step-device').classList.remove('active');
+    document.getElementById('step-name').classList.add('active');
+}
+
+function confirmName() {
+    let val = document.getElementById('player-name').value.trim();
+    if(val) operatorName = val;
+    document.getElementById('tutorial-title').innerText = languages[selectedLang].tutorialTitle;
+    document.getElementById('tutorial-text').innerText = selectedDevice === 'PC' ? languages[selectedLang].pcInstructions : languages[selectedLang].mobileInstructions;
+    document.getElementById('btn-start-game').innerText = languages[selectedLang].startGame;
+    document.getElementById('step-name').classList.remove('active');
+    document.getElementById('step-tutorial').classList.add('active');
+}
+
+function startGame() {
+    document.getElementById('setup-screen').style.display = 'none';
+    gameHasStarted = true;
+    initPhaserGame();
+}
+
+let currentScenePointer = null;
+
+function triggerDeathMenu(scene) {
+    currentScenePointer = scene;
+    stopMusicLoop();
+    document.getElementById('ad-title').innerText = languages[selectedLang].deadTitle;
+    document.getElementById('ad-desc').innerText = languages[selectedLang].deadDesc;
+    document.getElementById('btn-watch-ad').innerText = languages[selectedLang].watchAd;
+    document.getElementById('btn-skip-ad').innerText = languages[selectedLang].restart;
+    document.getElementById('ad-modal').style.display = 'flex';
+}
+
+function watchRewardAd() {
+    document.getElementById('ad-modal').style.display = 'none';
+    if(currentScenePointer) {
+        currentScenePointer.revivePlayer();
+        startMusicLoop();
+    }
+}
+
+function skipAd() {
+    document.getElementById('ad-modal').style.display = 'none';
+    if(currentScenePointer) currentScenePointer.resetWholeGame();
+}
+
+function triggerCinematicEnding() {
+    stopMusicLoop();
+    if(phaserGameInstance) phaserGameInstance.destroy(true);
+    let screen = document.getElementById('ending-screen');
+    let title = document.getElementById('end-title');
+    let story = document.getElementById('end-story');
+    let isHappyEnding = Math.random() > 0.5;
+    
+    if(isHappyEnding) {
+        screen.style.background = "radial-gradient(circle, #0c2b3a 0%, #030a10 100%)";
+        title.style.color = "#00ffcc";
+        if(selectedLang === 'en') {
+            title.innerText = "🎬 HAPPY ENDING: THE RESURGENCE";
+            story.innerText = "The Core terminal connects successfully! Operator [" + operatorName + "], your calculations saved the infrastructure. Neon blue pulses back into the grid trees.";
+        } else {
+            title.innerText = "🎬 হ্যাপি এন্ডিং: মহাজাগতিক পুনরুত্থান";
+            story.innerText = "কোর টার্মিনাল সফলভাবে সংযুক্ত হয়েছে! অপারেটর [" + operatorName + "], আপনার নিখুঁত টাইমিং বিশ্বকে রক্ষা করেছে।";
+        }
+    } else {
+        screen.style.background = "radial-gradient(circle, #3a0c14 0%, #0a0305 100%)";
+        title.style.color = "#ff0055";
+        if(selectedLang === 'en') {
+            title.innerText = "🎬 SAD ENDING: THE CRITICAL SACRIFICE";
+            story.innerText = "Emergency klaxons blare! To save the logs of Operator [" + operatorName + "], Unit-01 chooses self-sacrifice.";
+        } else {
+            title.innerText = "🎬 স্যাড এন্ডিং: রোবটের আত্মত্যাগ";
+            story.innerText = "লাল রঙের ইমার্জেন্সি লাইট জ্বলে উঠল! অপারেটর [" + operatorName + "]-এর সমস্ত মেমরি ফাইল সুরক্ষিত রাখতে রোবটটি নিজেকে উৎসর্গ করলো।";
+        }
+    }
+    screen.style.display = "flex";
+}
+
+function initPhaserGame() {
+    const config = {
+        type: Phaser.AUTO,
+        width: window.innerWidth,
+        height: window.innerHeight,
+        parent: 'game-container',
+        backgroundColor: '#05070f',
+        physics: {
+            default: 'arcade',
+            arcade: { gravity: { y: 1400 }, debug: false }
+        },
+        scene: { preload: preload, create: create, update: update }
+    };
+    phaserGameInstance = new Phaser.Game(config);
+}
+
+function preload() {}
+
+let player, platforms, laserBarriers, score = 0, scoreText, targetScore = 5000;
+
+function create() {
+    score = 0;
+    const gameWidth = this.sys.game.config.width;
+    const gameHeight = this.sys.game.config.height;
+    
+    startMusicLoop();
+    
+    let bgGraphics = this.add.graphics().setScrollFactor(0);
+    bgGraphics.fillGradientStyle(0x05070f, 0x05070f, 0x10152b, 0x10152b, 1);
+    bgGraphics.fillRect(0, 0, gameWidth, gameHeight);
+    bgGraphics.lineStyle(1, 0x1e293b, 0.4);
+    for(let i=0; i<gameWidth; i+=40) { bgGraphics.line(i, 0, i, gameHeight); }
+    for(let j=0; j<gameHeight; j+=40) { bgGraphics.line(0, j, gameWidth, j); }
+
+    platforms = this.physics.add.staticGroup();
+    
+    let groundY = gameHeight - 40;
+    let startFloor = this.add.rectangle(gameWidth / 2, groundY, gameWidth * 2, 40, 0x111827).setStrokeStyle(2, 0x00ffcc);
+    platforms.add(startFloor);
+
+    for(let i=0; i<6; i++){
+        let platX = 400 + (i * 300);
+        let platY = gameHeight - 150 - (Math.random() * 120);
+        let p = this.add.rectangle(platX, platY, 180, 20, 0x111827).setStrokeStyle(2, 0xff0055);
+        platforms.add(p);
+    }
+
+    laserBarriers = this.physics.add.group({ allowGravity: false });
+    let initialLaser = this.add.rectangle(700, gameHeight - 220, 6, 80, 0x00ffcc);
+    this.tweens.add({ targets: initialLaser, alpha: 0.2, duration: 200, yoyo: true, loop: -1 });
+    laserBarriers.add(initialLaser);
+
+    player = this.add.rectangle(150, gameHeight - 150, 30, 50, 0x111827).setStrokeStyle(3, 0xff0055);
+    this.physics.add.existing(player);
+    player.body.setCollideWorldBounds(false);
+
+    scoreText = this.add.text(20, 20, '', {
+        fontFamily: '"Courier New", Courier, monospace',
+        fontSize: '18px', fill: '#00ffcc', backgroundColor: '#0a0f1d', padding: { x: 10, y: 5 }
+    }).setScrollFactor(0).setDepth(100);
+
+    this.physics.add.collider(player, platforms);
+    this.physics.add.overlap(player, laserBarriers, hitHazard, null, this);
+
+    if (selectedDevice === 'PC') {
+        this.input.keyboard.on('keydown-SPACE', triggerJump, this);
+        this.input.keyboard.on('keydown-UP', triggerJump, this);
+    } else {
+        this.input.on('pointerdown', triggerJump, this);
+    }
+
+    this.cameras.main.setBounds(0, 0, 999999, gameHeight);
+    this.cameras.main.startFollow(player, true, 0.1, 0, -150, 0);
+}
+
+function update(time, delta) {
+    if(!player || !player.body) return;
+
+    const gameHeight = this.sys.game.config.height;
+    player.body.setVelocityX(230 + (score * 0.015));
+
+    let rightmostPlatformX = 0;
+    platforms.getChildren().forEach(p => { if(p.x > rightmostPlatformX) rightmostPlatformX = p.x; });
+    
+    if(rightmostPlatformX < player.x + window.innerWidth + 300) {
+        let nextX = rightmostPlatformX + 220 + (Math.random() * 120);
+        let nextY = gameHeight - 120 - (Math.random() * 180);
+        let p = this.add.rectangle(nextX, nextY, 160, 20, 0x111827).setStrokeStyle(2, 0xff0055);
+        platforms.add(p);
+
+        if(Math.random() > 0.45) {
+            let l = this.add.rectangle(nextX + 50, nextY - 60, 6, 70, 0x00ffcc);
+            this.tweens.add({ targets: l, alpha: 0.3, duration: 250, yoyo: true, loop: -1 });
+            laserBarriers.add(l);
+        }
+    }
+
+    platforms.getChildren().forEach(p => { if(p.x < player.x - 500) p.destroy(); });
+    laserBarriers.getChildren().forEach(l => { if(l.x < player.x - 500) l.destroy(); });
+
+    if(player.body.velocity.x > 0 && player.y < gameHeight + 100) {
+        score += Math.floor(delta * 0.08);
+        scoreText.setText(operatorName.toUpperCase() + " LOGGED ENCRYPTION: " + score + " / " + targetScore);
+    }
+
+    if(score >= targetScore) triggerCinematicEnding();
+
+    if(player.y > gameHeight + 100) {
+        this.physics.pause();
+        playCrashSound();
+        triggerDeathMenu(this);
+    }
+}
+
+function triggerJump() {
+    if(!player || !player.body) return;
+    if(player.body.touching.down || player.body.blocked.down) {
+        player.body.setVelocityY(-650);
+        playJumpAudio();
+    }
+}
+
+function hitHazard() {
+    this.physics.pause();
+    playCrashSound();
+    triggerDeathMenu(this);
+}
+
+this.revivePlayer = function() {
+    this.physics.resume();
+    player.y = this.sys.game.config.height - 300;
+    player.body.setVelocityY(0);
+    player.x += 100;
+}
+
+this.resetWholeGame = function() {
+    score = 0;
+    this.scene.restart();
+}
+
+let stepCount = 0;
+function initAudio() {
+    if (!audioContext) audioContext = new (window.AudioContext || window.webkitAudioContext)();
+}
+
+function startMusicLoop() {
+    initAudio();
+    stopMusicLoop();
+    musicIntervalId = setInterval(() => {
+        if (gameHasStarted && phaserGameInstance && !phaserGameInstance.loop.isPaused) {
+            playCyberMusicStep();
+        }
+    }, 240);
+}
+
+function stopMusicLoop() {
+    if (musicIntervalId) { clearInterval(musicIntervalId); musicIntervalId = null; }
+}
+
+function playCyberMusicStep() {
+    initAudio();
+    let now = audioContext.currentTime;
+
+    if (stepCount % 2 === 0) {
+        let kickOsc = audioContext.createOscillator();
+        let kickGain = audioContext.createGain();
+        kickOsc.type = 'sine';
+        kickOsc.frequency.setValueAtTime(140, now);
+        kickOsc.frequency.exponentialRampToValueAtTime(45, now + 0.1);
+        kickGain.gain.setValueAtTime(0.2, now);
+        kickGain.gain.exponentialRampToValueAtTime(0.001, now + 0.12);
+        kickOsc.connect(kickGain);
+        kickGain.connect(audioContext.destination);
+        kickOsc.start(now);
+        kickOsc.stop(now + 0.13);
+    }
+
+    let bassOsc = audioContext.createOscillator();
+    let bassGain = audioContext.createGain();
+    bassOsc.type = 'triangle';
+    let notes = [55.00, 55.00, 65.41, 65.41, 73.42, 73.42, 87.31, 98.00];
+    let baseFreq = notes[Math.floor(stepCount / 4) % notes.length];
+    if (stepCount % 2 === 1) baseFreq *= 2;
+    bassOsc.frequency.setValueAtTime(baseFreq, now);
+    bassGain.gain.setValueAtTime(0.1, now);
+    bassGain.gain.exponentialRampToValueAtTime(0.01, now + 0.2);
+    bassOsc.connect(bassGain);
+    bassGain.connect(audioContext.destination);
+    bassOsc.start(now);
+    bassOsc.stop(now + 0.22);
+
+    stepCount++;
+}
+
+function playJumpAudio() {
+    initAudio();
+    let now = audioContext.currentTime;
+    let osc = audioContext.createOscillator();
+    let gain = audioContext.createGain();
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(300, now);
+    osc.frequency.exponentialRampToValueAtTime(850, now + 0.12);
+    gain.gain.setValueAtTime(0.1, now);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.15);
+    osc.connect(gain);
+    gain.connect(audioContext.destination);
+    osc.start(now);
+    osc.stop(now + 0.16);
+}
+
+function playCrashSound() {
+    initAudio();
+    let now = audioContext.currentTime;
+    let osc = audioContext.createOscillator();
+    let gain = audioContext.createGain();
+    osc.type = 'sawtooth';
+    osc.frequency.setValueAtTime(160, now);
+    osc.frequency.linearRampToValueAtTime(40, now + 0.3);
+    gain.gain.setValueAtTime(0.2, now);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.35);
+    osc.connect(gain);
+    gain.connect(audioContext.destination);
+    osc.start(now);
+    osc.stop(now + 0.4);
+}
+
+window.addEventListener('click', () => { initAudio(); if(audioContext && audioContext.state === 'suspended') audioContext.resume(); });
+window.addEventListener('touchstart', () => { initAudio(); if(audioContext && audioContext.state === 'suspended') audioContext.resume(); });
+
+// ফোর্স রেন্ডারিং এবং ব্ল্যাক স্ক্রিন ফিক্স লজিক
+document.addEventListener("DOMContentLoaded", () => {
+    const setup = document.getElementById('setup-screen');
+    if(setup) setup.style.display = 'flex';
+});
