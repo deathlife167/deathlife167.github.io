@@ -14,7 +14,7 @@
             width: 100%; 
             height: 100%; 
             background: radial-gradient(circle, #101525 0%, #05070f 100%); 
-            display: flex; 
+            display: flex !important; 
             flex-direction: column; 
             align-items: center; 
             justify-content: center; 
@@ -33,7 +33,7 @@
         button:hover { background: #ff0055; color: #fff; box-shadow: 0 0 15px #ff0055; }
         input[type="text"] { background: #05070f; border: 2px solid #00ffcc; padding: 12px; color: #00ffcc; font-size: 1.1rem; font-family: inherit; text-align: center; width: 100%; margin-top: 15px; border-radius: 4px; outline: none; }
         .instructions { font-size: 0.95rem; line-height: 1.5; color: #94a3b8; margin-top: 15px; text-align: left; background: #070a14; padding: 15px; border-left: 3px solid #00ffcc; max-height: 180px; overflow-y: auto; white-space: pre-line; }
-        #game-container { width: 100%; height: 100%; display: block; }
+        #game-container { width: 100%; height: 100%; display: none; }
         #ad-modal { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(5,7,15,0.95); display: none; flex-direction: column; align-items: center; justify-content: center; z-index: 20; color: #ff0055; }
         .ad-box { background: #101525; border: 3px solid #ff0055; padding: 30px; border-radius: 8px; text-align: center; max-width: 400px; }
         #ending-screen { position: absolute; top:0; left:0; width:100%; height:100%; display:none; flex-direction:column; align-items:center; justify-content:center; z-index:30; padding:20px; text-align:center; }
@@ -138,16 +138,17 @@
                 this.audioContext = null;
                 this.masterGain = null;
                 this.isPlaying = false;
+                this.backgroundLoopId = null;
             }
 
             init() {
                 if (!this.audioContext) {
                     this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
                     this.masterGain = this.audioContext.createGain();
-                    this.masterGain.gain.value = 0.3;
+                    this.masterGain.gain.value = 0.35;
                     this.masterGain.connect(this.audioContext.destination);
                 }
-                if (this.audioContext.state === 'suspended') {
+                if (this.audioContext && this.audioContext.state === 'suspended') {
                     this.audioContext.resume();
                 }
             }
@@ -161,6 +162,9 @@
 
             stopBackgroundLoop() {
                 this.isPlaying = false;
+                if (this.backgroundLoopId) {
+                    clearTimeout(this.backgroundLoopId);
+                }
             }
 
             scheduleBackgroundNotes() {
@@ -174,8 +178,8 @@
                 bass.type = 'sine';
                 let bassNotes = [45, 50, 57, 50];
                 bass.frequency.setValueAtTime(bassNotes[Math.floor(now * 1.5) % bassNotes.length], now);
-                bassGain.gain.setValueAtTime(0.1, now);
-                bassGain.gain.linearRampToValueAtTime(0.08, now + 0.5);
+                bassGain.gain.setValueAtTime(0.12, now);
+                bassGain.gain.linearRampToValueAtTime(0.1, now + 0.5);
                 bass.connect(bassGain);
                 bassGain.connect(this.masterGain);
                 bass.start(now);
@@ -187,14 +191,14 @@
                 pad.type = 'triangle';
                 let melodyNotes = [220, 247, 294, 247];
                 pad.frequency.setValueAtTime(melodyNotes[Math.floor(now) % melodyNotes.length], now);
-                padGain.gain.setValueAtTime(0.05, now);
-                padGain.gain.linearRampToValueAtTime(0.03, now + 0.5);
+                padGain.gain.setValueAtTime(0.07, now);
+                padGain.gain.linearRampToValueAtTime(0.05, now + 0.5);
                 pad.connect(padGain);
                 padGain.connect(this.masterGain);
                 pad.start(now);
                 pad.stop(now + 0.5);
 
-                setTimeout(() => this.scheduleBackgroundNotes(), 500);
+                this.backgroundLoopId = setTimeout(() => this.scheduleBackgroundNotes(), 500);
             }
 
             playJumpSound() {
@@ -202,21 +206,16 @@
                 let now = this.audioContext.currentTime;
                 let osc = this.audioContext.createOscillator();
                 let gain = this.audioContext.createGain();
-                let filter = this.audioContext.createBiquadFilter();
 
                 osc.type = 'sine';
-                osc.frequency.setValueAtTime(400, now);
-                osc.frequency.exponentialRampToValueAtTime(900, now + 0.06);
-                osc.frequency.exponentialRampToValueAtTime(350, now + 0.15);
+                osc.frequency.setValueAtTime(500, now);
+                osc.frequency.exponentialRampToValueAtTime(1000, now + 0.08);
+                osc.frequency.exponentialRampToValueAtTime(400, now + 0.18);
 
-                gain.gain.setValueAtTime(0.18, now);
+                gain.gain.setValueAtTime(0.2, now);
                 gain.gain.exponentialRampToValueAtTime(0.001, now + 0.2);
 
-                filter.type = 'highpass';
-                filter.frequency.setValueAtTime(250, now);
-
-                osc.connect(filter);
-                filter.connect(gain);
+                osc.connect(gain);
                 gain.connect(this.masterGain);
                 osc.start(now);
                 osc.stop(now + 0.2);
@@ -226,52 +225,17 @@
                 this.init();
                 let now = this.audioContext.currentTime;
 
-                // Low frequency sawtooth crash
                 let crash = this.audioContext.createOscillator();
                 let crashGain = this.audioContext.createGain();
                 crash.type = 'sawtooth';
-                crash.frequency.setValueAtTime(180, now);
-                crash.frequency.linearRampToValueAtTime(40, now + 0.4);
-                crashGain.gain.setValueAtTime(0.25, now);
-                crashGain.gain.exponentialRampToValueAtTime(0.001, now + 0.45);
+                crash.frequency.setValueAtTime(200, now);
+                crash.frequency.linearRampToValueAtTime(50, now + 0.4);
+                crashGain.gain.setValueAtTime(0.3, now);
+                crashGain.gain.exponentialRampToValueAtTime(0.001, now + 0.5);
                 crash.connect(crashGain);
                 crashGain.connect(this.masterGain);
                 crash.start(now);
-                crash.stop(now + 0.45);
-
-                // Noise burst overlay
-                let noiseBuffer = this.audioContext.createBuffer(1, this.audioContext.sampleRate * 0.4, this.audioContext.sampleRate);
-                let data = noiseBuffer.getChannelData(0);
-                for (let i = 0; i < noiseBuffer.length; i++) {
-                    data[i] = (Math.random() * 2 - 1) * (1 - i / noiseBuffer.length);
-                }
-                let noiseSource = this.audioContext.createBufferSource();
-                noiseSource.buffer = noiseBuffer;
-                let noiseGain = this.audioContext.createGain();
-                noiseGain.gain.setValueAtTime(0.12, now);
-                noiseGain.gain.exponentialRampToValueAtTime(0.001, now + 0.4);
-                noiseSource.connect(noiseGain);
-                noiseGain.connect(this.masterGain);
-                noiseSource.start(now);
-            }
-
-            playCoinSound() {
-                this.init();
-                let now = this.audioContext.currentTime;
-                let osc = this.audioContext.createOscillator();
-                let gain = this.audioContext.createGain();
-
-                osc.type = 'sine';
-                osc.frequency.setValueAtTime(900, now);
-                osc.frequency.exponentialRampToValueAtTime(500, now + 0.08);
-
-                gain.gain.setValueAtTime(0.12, now);
-                gain.gain.exponentialRampToValueAtTime(0.001, now + 0.12);
-
-                osc.connect(gain);
-                gain.connect(this.masterGain);
-                osc.start(now);
-                osc.stop(now + 0.12);
+                crash.stop(now + 0.5);
             }
         }
 
@@ -303,6 +267,7 @@
 
         function startGame() {
             document.getElementById('setup-screen').style.display = 'none';
+            document.getElementById('game-container').style.display = 'block';
             gameHasStarted = true;
             isGameRunning = true;
             audioEngine.init();
@@ -372,7 +337,6 @@
             screen.style.display = "flex";
         }
 
-        // Phaser Game Scene Class
         class GameScene extends Phaser.Scene {
             constructor() {
                 super();
@@ -520,8 +484,8 @@
             phaserGameInstance = new Phaser.Game(config);
         }
 
-        window.addEventListener('click', () => { audioEngine.init(); });
-        window.addEventListener('touchstart', () => { audioEngine.init(); });
+        document.addEventListener('click', () => { audioEngine.init(); }, true);
+        document.addEventListener('touchstart', () => { audioEngine.init(); }, true);
 
         document.addEventListener("DOMContentLoaded", () => {
             const setup = document.getElementById('setup-screen');
