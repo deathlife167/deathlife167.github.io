@@ -128,8 +128,154 @@
         let operatorName = 'Operator_01';
         let gameHasStarted = false;
         let phaserGameInstance = null;
-        let musicIntervalId = null;
         let audioContext = null;
+        let currentScenePointer = null;
+        let isGameRunning = false;
+
+        // Advanced Audio Synthesis Engine
+        class AudioEngine {
+            constructor() {
+                this.audioContext = null;
+                this.masterGain = null;
+                this.isPlaying = false;
+            }
+
+            init() {
+                if (!this.audioContext) {
+                    this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                    this.masterGain = this.audioContext.createGain();
+                    this.masterGain.gain.value = 0.3;
+                    this.masterGain.connect(this.audioContext.destination);
+                }
+                if (this.audioContext.state === 'suspended') {
+                    this.audioContext.resume();
+                }
+            }
+
+            playBackgroundLoop() {
+                if (this.isPlaying) return;
+                this.init();
+                this.isPlaying = true;
+                this.scheduleBackgroundNotes();
+            }
+
+            stopBackgroundLoop() {
+                this.isPlaying = false;
+            }
+
+            scheduleBackgroundNotes() {
+                if (!this.isPlaying || !isGameRunning) return;
+
+                let now = this.audioContext.currentTime;
+                
+                // Deep Synthwave Bass (45-57 Hz)
+                let bass = this.audioContext.createOscillator();
+                let bassGain = this.audioContext.createGain();
+                bass.type = 'sine';
+                let bassNotes = [45, 50, 57, 50];
+                bass.frequency.setValueAtTime(bassNotes[Math.floor(now * 1.5) % bassNotes.length], now);
+                bassGain.gain.setValueAtTime(0.1, now);
+                bassGain.gain.linearRampToValueAtTime(0.08, now + 0.5);
+                bass.connect(bassGain);
+                bassGain.connect(this.masterGain);
+                bass.start(now);
+                bass.stop(now + 0.5);
+
+                // Atmospheric Pad Layer
+                let pad = this.audioContext.createOscillator();
+                let padGain = this.audioContext.createGain();
+                pad.type = 'triangle';
+                let melodyNotes = [220, 247, 294, 247];
+                pad.frequency.setValueAtTime(melodyNotes[Math.floor(now) % melodyNotes.length], now);
+                padGain.gain.setValueAtTime(0.05, now);
+                padGain.gain.linearRampToValueAtTime(0.03, now + 0.5);
+                pad.connect(padGain);
+                padGain.connect(this.masterGain);
+                pad.start(now);
+                pad.stop(now + 0.5);
+
+                setTimeout(() => this.scheduleBackgroundNotes(), 500);
+            }
+
+            playJumpSound() {
+                this.init();
+                let now = this.audioContext.currentTime;
+                let osc = this.audioContext.createOscillator();
+                let gain = this.audioContext.createGain();
+                let filter = this.audioContext.createBiquadFilter();
+
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(400, now);
+                osc.frequency.exponentialRampToValueAtTime(900, now + 0.06);
+                osc.frequency.exponentialRampToValueAtTime(350, now + 0.15);
+
+                gain.gain.setValueAtTime(0.18, now);
+                gain.gain.exponentialRampToValueAtTime(0.001, now + 0.2);
+
+                filter.type = 'highpass';
+                filter.frequency.setValueAtTime(250, now);
+
+                osc.connect(filter);
+                filter.connect(gain);
+                gain.connect(this.masterGain);
+                osc.start(now);
+                osc.stop(now + 0.2);
+            }
+
+            playCrashSound() {
+                this.init();
+                let now = this.audioContext.currentTime;
+
+                // Low frequency sawtooth crash
+                let crash = this.audioContext.createOscillator();
+                let crashGain = this.audioContext.createGain();
+                crash.type = 'sawtooth';
+                crash.frequency.setValueAtTime(180, now);
+                crash.frequency.linearRampToValueAtTime(40, now + 0.4);
+                crashGain.gain.setValueAtTime(0.25, now);
+                crashGain.gain.exponentialRampToValueAtTime(0.001, now + 0.45);
+                crash.connect(crashGain);
+                crashGain.connect(this.masterGain);
+                crash.start(now);
+                crash.stop(now + 0.45);
+
+                // Noise burst overlay
+                let noiseBuffer = this.audioContext.createBuffer(1, this.audioContext.sampleRate * 0.4, this.audioContext.sampleRate);
+                let data = noiseBuffer.getChannelData(0);
+                for (let i = 0; i < noiseBuffer.length; i++) {
+                    data[i] = (Math.random() * 2 - 1) * (1 - i / noiseBuffer.length);
+                }
+                let noiseSource = this.audioContext.createBufferSource();
+                noiseSource.buffer = noiseBuffer;
+                let noiseGain = this.audioContext.createGain();
+                noiseGain.gain.setValueAtTime(0.12, now);
+                noiseGain.gain.exponentialRampToValueAtTime(0.001, now + 0.4);
+                noiseSource.connect(noiseGain);
+                noiseGain.connect(this.masterGain);
+                noiseSource.start(now);
+            }
+
+            playCoinSound() {
+                this.init();
+                let now = this.audioContext.currentTime;
+                let osc = this.audioContext.createOscillator();
+                let gain = this.audioContext.createGain();
+
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(900, now);
+                osc.frequency.exponentialRampToValueAtTime(500, now + 0.08);
+
+                gain.gain.setValueAtTime(0.12, now);
+                gain.gain.exponentialRampToValueAtTime(0.001, now + 0.12);
+
+                osc.connect(gain);
+                gain.connect(this.masterGain);
+                osc.start(now);
+                osc.stop(now + 0.12);
+            }
+        }
+
+        let audioEngine = new AudioEngine();
 
         function selectLang(lang) {
             selectedLang = lang;
@@ -158,14 +304,16 @@
         function startGame() {
             document.getElementById('setup-screen').style.display = 'none';
             gameHasStarted = true;
+            isGameRunning = true;
+            audioEngine.init();
+            audioEngine.playBackgroundLoop();
             initPhaserGame();
         }
 
-        let currentScenePointer = null;
-
         function triggerDeathMenu(scene) {
             currentScenePointer = scene;
-            stopMusicLoop();
+            isGameRunning = false;
+            audioEngine.stopBackgroundLoop();
             document.getElementById('ad-title').innerText = languages[selectedLang].deadTitle;
             document.getElementById('ad-desc').innerText = languages[selectedLang].deadDesc;
             document.getElementById('btn-watch-ad').innerText = languages[selectedLang].watchAd;
@@ -176,18 +324,24 @@
         function watchRewardAd() {
             document.getElementById('ad-modal').style.display = 'none';
             if(currentScenePointer) {
+                isGameRunning = true;
+                audioEngine.playBackgroundLoop();
                 currentScenePointer.revivePlayer();
-                startMusicLoop();
             }
         }
 
         function skipAd() {
             document.getElementById('ad-modal').style.display = 'none';
-            if(currentScenePointer) currentScenePointer.resetWholeGame();
+            if(currentScenePointer) {
+                isGameRunning = true;
+                audioEngine.playBackgroundLoop();
+                currentScenePointer.resetWholeGame();
+            }
         }
 
         function triggerCinematicEnding() {
-            stopMusicLoop();
+            isGameRunning = false;
+            audioEngine.stopBackgroundLoop();
             if(phaserGameInstance) phaserGameInstance.destroy(true);
             let screen = document.getElementById('ending-screen');
             let title = document.getElementById('end-title');
@@ -218,6 +372,138 @@
             screen.style.display = "flex";
         }
 
+        // Phaser Game Scene Class
+        class GameScene extends Phaser.Scene {
+            constructor() {
+                super();
+            }
+
+            preload() {}
+
+            create() {
+                let gameWidth = this.sys.game.config.width;
+                let gameHeight = this.sys.game.config.height;
+                
+                let bgGraphics = this.add.graphics().setScrollFactor(0);
+                bgGraphics.fillGradientStyle(0x05070f, 0x05070f, 0x10152b, 0x10152b, 1);
+                bgGraphics.fillRect(0, 0, gameWidth, gameHeight);
+                bgGraphics.lineStyle(1, 0x1e293b, 0.4);
+                for(let i=0; i<gameWidth; i+=40) { bgGraphics.line(i, 0, i, gameHeight); }
+                for(let j=0; j<gameHeight; j+=40) { bgGraphics.line(0, j, gameWidth, j); }
+
+                this.platforms = this.physics.add.staticGroup();
+                
+                let groundY = gameHeight - 40;
+                let startFloor = this.add.rectangle(gameWidth / 2, groundY, gameWidth * 2, 40, 0x111827).setStrokeStyle(2, 0x00ffcc);
+                this.platforms.add(startFloor);
+
+                for(let i=0; i<6; i++){
+                    let platX = 400 + (i * 300);
+                    let platY = gameHeight - 150 - (Math.random() * 120);
+                    let p = this.add.rectangle(platX, platY, 180, 20, 0x111827).setStrokeStyle(2, 0xff0055);
+                    this.platforms.add(p);
+                }
+
+                this.laserBarriers = this.physics.add.group({ allowGravity: false });
+                let initialLaser = this.add.rectangle(700, gameHeight - 220, 6, 80, 0x00ffcc);
+                this.tweens.add({ targets: initialLaser, alpha: 0.2, duration: 200, yoyo: true, loop: -1 });
+                this.laserBarriers.add(initialLaser);
+
+                this.player = this.add.rectangle(150, gameHeight - 150, 30, 50, 0x111827).setStrokeStyle(3, 0xff0055);
+                this.physics.add.existing(this.player);
+                this.player.body.setCollideWorldBounds(false);
+
+                this.scoreText = this.add.text(20, 20, '', {
+                    fontFamily: '"Courier New", Courier, monospace',
+                    fontSize: '18px', fill: '#00ffcc', backgroundColor: '#0a0f1d', padding: { x: 10, y: 5 }
+                }).setScrollFactor(0).setDepth(100);
+
+                this.physics.add.collider(this.player, this.platforms);
+                this.physics.add.overlap(this.player, this.laserBarriers, this.hitHazard, null, this);
+
+                if (selectedDevice === 'PC') {
+                    this.input.keyboard.on('keydown-SPACE', this.triggerJump, this);
+                    this.input.keyboard.on('keydown-UP', this.triggerJump, this);
+                } else {
+                    this.input.on('pointerdown', this.triggerJump, this);
+                }
+
+                this.cameras.main.setBounds(0, 0, 999999, gameHeight);
+                this.cameras.main.startFollow(this.player, true, 0.1, 0, -150, 0);
+                
+                this.gameWidth = gameWidth;
+                this.gameHeight = gameHeight;
+                this.score = 0;
+                this.targetScore = 5000;
+            }
+
+            update(time, delta) {
+                if(!this.player || !this.player.body) return;
+
+                this.player.body.setVelocityX(230 + (this.score * 0.015));
+
+                let rightmostPlatformX = 0;
+                this.platforms.getChildren().forEach(p => { if(p.x > rightmostPlatformX) rightmostPlatformX = p.x; });
+                
+                if(rightmostPlatformX < this.player.x + window.innerWidth + 300) {
+                    let nextX = rightmostPlatformX + 220 + (Math.random() * 120);
+                    let nextY = this.gameHeight - 120 - (Math.random() * 180);
+                    let p = this.add.rectangle(nextX, nextY, 160, 20, 0x111827).setStrokeStyle(2, 0xff0055);
+                    this.platforms.add(p);
+
+                    if(Math.random() > 0.45) {
+                        let l = this.add.rectangle(nextX + 50, nextY - 60, 6, 70, 0x00ffcc);
+                        this.tweens.add({ targets: l, alpha: 0.3, duration: 250, yoyo: true, loop: -1 });
+                        this.laserBarriers.add(l);
+                    }
+                }
+
+                this.platforms.getChildren().forEach(p => { if(p.x < this.player.x - 500) p.destroy(); });
+                this.laserBarriers.getChildren().forEach(l => { if(l.x < this.player.x - 500) l.destroy(); });
+
+                if(this.player.body.velocity.x > 0 && this.player.y < this.gameHeight + 100) {
+                    this.score += Math.floor(delta * 0.08);
+                    this.scoreText.setText(operatorName.toUpperCase() + " LOGGED ENCRYPTION: " + this.score + " / " + this.targetScore);
+                }
+
+                if(this.score >= this.targetScore) triggerCinematicEnding();
+
+                if(this.player.y > this.gameHeight + 100) {
+                    this.physics.pause();
+                    audioEngine.playCrashSound();
+                    currentScenePointer = this;
+                    triggerDeathMenu(this);
+                }
+            }
+
+            triggerJump() {
+                if(!this.player || !this.player.body) return;
+                if(this.player.body.touching.down || this.player.body.blocked.down) {
+                    this.player.body.setVelocityY(-650);
+                    audioEngine.playJumpSound();
+                }
+            }
+
+            hitHazard() {
+                this.physics.pause();
+                audioEngine.playCrashSound();
+                currentScenePointer = this;
+                triggerDeathMenu(this);
+            }
+
+            revivePlayer() {
+                this.physics.resume();
+                this.player.y = this.gameHeight - 300;
+                this.player.body.setVelocityY(0);
+                this.player.x += 100;
+            }
+
+            resetWholeGame() {
+                this.score = 0;
+                this.scene.restart();
+            }
+        }
+
         function initPhaserGame() {
             const config = {
                 type: Phaser.AUTO,
@@ -229,225 +515,14 @@
                     default: 'arcade',
                     arcade: { gravity: { y: 1400 }, debug: false }
                 },
-                scene: { preload: preload, create: create, update: update }
+                scene: GameScene
             };
             phaserGameInstance = new Phaser.Game(config);
         }
 
-        function preload() {}
+        window.addEventListener('click', () => { audioEngine.init(); });
+        window.addEventListener('touchstart', () => { audioEngine.init(); });
 
-        let player, platforms, laserBarriers, score = 0, scoreText, targetScore = 5000;
-
-        function create() {
-            score = 0;
-            const gameWidth = this.sys.game.config.width;
-            const gameHeight = this.sys.game.config.height;
-            
-            startMusicLoop();
-            
-            let bgGraphics = this.add.graphics().setScrollFactor(0);
-            bgGraphics.fillGradientStyle(0x05070f, 0x05070f, 0x10152b, 0x10152b, 1);
-            bgGraphics.fillRect(0, 0, gameWidth, gameHeight);
-            bgGraphics.lineStyle(1, 0x1e293b, 0.4);
-            for(let i=0; i<gameWidth; i+=40) { bgGraphics.line(i, 0, i, gameHeight); }
-            for(let j=0; j<gameHeight; j+=40) { bgGraphics.line(0, j, gameWidth, j); }
-
-            platforms = this.physics.add.staticGroup();
-            
-            let groundY = gameHeight - 40;
-            let startFloor = this.add.rectangle(gameWidth / 2, groundY, gameWidth * 2, 40, 0x111827).setStrokeStyle(2, 0x00ffcc);
-            platforms.add(startFloor);
-
-            for(let i=0; i<6; i++){
-                let platX = 400 + (i * 300);
-                let platY = gameHeight - 150 - (Math.random() * 120);
-                let p = this.add.rectangle(platX, platY, 180, 20, 0x111827).setStrokeStyle(2, 0xff0055);
-                platforms.add(p);
-            }
-
-            laserBarriers = this.physics.add.group({ allowGravity: false });
-            let initialLaser = this.add.rectangle(700, gameHeight - 220, 6, 80, 0x00ffcc);
-            this.tweens.add({ targets: initialLaser, alpha: 0.2, duration: 200, yoyo: true, loop: -1 });
-            laserBarriers.add(initialLaser);
-
-            player = this.add.rectangle(150, gameHeight - 150, 30, 50, 0x111827).setStrokeStyle(3, 0xff0055);
-            this.physics.add.existing(player);
-            player.body.setCollideWorldBounds(false);
-
-            scoreText = this.add.text(20, 20, '', {
-                fontFamily: '"Courier New", Courier, monospace',
-                fontSize: '18px', fill: '#00ffcc', backgroundColor: '#0a0f1d', padding: { x: 10, y: 5 }
-            }).setScrollFactor(0).setDepth(100);
-
-            this.physics.add.collider(player, platforms);
-            this.physics.add.overlap(player, laserBarriers, hitHazard, null, this);
-
-            if (selectedDevice === 'PC') {
-                this.input.keyboard.on('keydown-SPACE', triggerJump, this);
-                this.input.keyboard.on('keydown-UP', triggerJump, this);
-            } else {
-                this.input.on('pointerdown', triggerJump, this);
-            }
-
-            this.cameras.main.setBounds(0, 0, 999999, gameHeight);
-            this.cameras.main.startFollow(player, true, 0.1, 0, -150, 0);
-        }
-
-        function update(time, delta) {
-            if(!player || !player.body) return;
-
-            const gameHeight = this.sys.game.config.height;
-            player.body.setVelocityX(230 + (score * 0.015));
-
-            let rightmostPlatformX = 0;
-            platforms.getChildren().forEach(p => { if(p.x > rightmostPlatformX) rightmostPlatformX = p.x; });
-            
-            if(rightmostPlatformX < player.x + window.innerWidth + 300) {
-                let nextX = rightmostPlatformX + 220 + (Math.random() * 120);
-                let nextY = gameHeight - 120 - (Math.random() * 180);
-                let p = this.add.rectangle(nextX, nextY, 160, 20, 0x111827).setStrokeStyle(2, 0xff0055);
-                platforms.add(p);
-
-                if(Math.random() > 0.45) {
-                    let l = this.add.rectangle(nextX + 50, nextY - 60, 6, 70, 0x00ffcc);
-                    this.tweens.add({ targets: l, alpha: 0.3, duration: 250, yoyo: true, loop: -1 });
-                    laserBarriers.add(l);
-                }
-            }
-
-            platforms.getChildren().forEach(p => { if(p.x < player.x - 500) p.destroy(); });
-            laserBarriers.getChildren().forEach(l => { if(l.x < player.x - 500) l.destroy(); });
-
-            if(player.body.velocity.x > 0 && player.y < gameHeight + 100) {
-                score += Math.floor(delta * 0.08);
-                scoreText.setText(operatorName.toUpperCase() + " LOGGED ENCRYPTION: " + score + " / " + targetScore);
-            }
-
-            if(score >= targetScore) triggerCinematicEnding();
-
-            if(player.y > gameHeight + 100) {
-                this.physics.pause();
-                playCrashSound();
-                triggerDeathMenu(this);
-            }
-        }
-
-        function triggerJump() {
-            if(!player || !player.body) return;
-            if(player.body.touching.down || player.body.blocked.down) {
-                player.body.setVelocityY(-650);
-                playJumpAudio();
-            }
-        }
-
-        function hitHazard() {
-            this.physics.pause();
-            playCrashSound();
-            triggerDeathMenu(this);
-        }
-
-        this.revivePlayer = function() {
-            this.physics.resume();
-            player.y = this.sys.game.config.height - 300;
-            player.body.setVelocityY(0);
-            player.x += 100;
-        }
-
-        this.resetWholeGame = function() {
-            score = 0;
-            this.scene.restart();
-        }
-
-        let stepCount = 0;
-        function initAudio() {
-            if (!audioContext) audioContext = new (window.AudioContext || window.webkitAudioContext)();
-        }
-
-        function startMusicLoop() {
-            initAudio();
-            stopMusicLoop();
-            musicIntervalId = setInterval(() => {
-                if (gameHasStarted && phaserGameInstance && !phaserGameInstance.loop.isPaused) {
-                    playCyberMusicStep();
-                }
-            }, 240);
-        }
-
-        function stopMusicLoop() {
-            if (musicIntervalId) { clearInterval(musicIntervalId); musicIntervalId = null; }
-        }
-
-        function playCyberMusicStep() {
-            initAudio();
-            let now = audioContext.currentTime;
-
-            if (stepCount % 2 === 0) {
-                let kickOsc = audioContext.createOscillator();
-                let kickGain = audioContext.createGain();
-                kickOsc.type = 'sine';
-                kickOsc.frequency.setValueAtTime(140, now);
-                kickOsc.frequency.exponentialRampToValueAtTime(45, now + 0.1);
-                kickGain.gain.setValueAtTime(0.2, now);
-                kickGain.gain.exponentialRampToValueAtTime(0.001, now + 0.12);
-                kickOsc.connect(kickGain);
-                kickGain.connect(audioContext.destination);
-                kickOsc.start(now);
-                kickOsc.stop(now + 0.13);
-            }
-
-            let bassOsc = audioContext.createOscillator();
-            let bassGain = audioContext.createGain();
-            bassOsc.type = 'triangle';
-            let notes = [55.00, 55.00, 65.41, 65.41, 73.42, 73.42, 87.31, 98.00];
-            let baseFreq = notes[Math.floor(stepCount / 4) % notes.length];
-            if (stepCount % 2 === 1) baseFreq *= 2;
-            bassOsc.frequency.setValueAtTime(baseFreq, now);
-            bassGain.gain.setValueAtTime(0.1, now);
-            bassGain.gain.exponentialRampToValueAtTime(0.01, now + 0.2);
-            bassOsc.connect(bassGain);
-            bassGain.connect(audioContext.destination);
-            bassOsc.start(now);
-            bassOsc.stop(now + 0.22);
-
-            stepCount++;
-        }
-
-        function playJumpAudio() {
-            initAudio();
-            let now = audioContext.currentTime;
-            let osc = audioContext.createOscillator();
-            let gain = audioContext.createGain();
-            osc.type = 'sine';
-            osc.frequency.setValueAtTime(300, now);
-            osc.frequency.exponentialRampToValueAtTime(850, now + 0.12);
-            gain.gain.setValueAtTime(0.1, now);
-            gain.gain.exponentialRampToValueAtTime(0.001, now + 0.15);
-            osc.connect(gain);
-            gain.connect(audioContext.destination);
-            osc.start(now);
-            osc.stop(now + 0.16);
-        }
-
-        function playCrashSound() {
-            initAudio();
-            let now = audioContext.currentTime;
-            let osc = audioContext.createOscillator();
-            let gain = audioContext.createGain();
-            osc.type = 'sawtooth';
-            osc.frequency.setValueAtTime(160, now);
-            osc.frequency.linearRampToValueAtTime(40, now + 0.3);
-            gain.gain.setValueAtTime(0.2, now);
-            gain.gain.exponentialRampToValueAtTime(0.001, now + 0.35);
-            osc.connect(gain);
-            gain.connect(audioContext.destination);
-            osc.start(now);
-            osc.stop(now + 0.4);
-        }
-
-        window.addEventListener('click', () => { initAudio(); if(audioContext && audioContext.state === 'suspended') audioContext.resume(); });
-        window.addEventListener('touchstart', () => { initAudio(); if(audioContext && audioContext.state === 'suspended') audioContext.resume(); });
-
-        // সেটআপ স্ক্রিন এবং রেন্ডারিং জোরপূর্বক অন রাখা
         document.addEventListener("DOMContentLoaded", () => {
             const setup = document.getElementById('setup-screen');
             if(setup) setup.style.display = 'flex';
